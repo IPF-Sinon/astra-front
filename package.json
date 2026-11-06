@@ -1,0 +1,25 @@
+{
+  "name": "astra-front",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AstraFront · 星海边境 — A real-time multiplayer orbital fleet strategy game built with pure Node.js and HTML5 Canvas.",
+  "main": "portal.js",
+  "scripts": {
+    "start": "node portal.js",
+    "node": "node server.js",
+    "test": "node tools/test.js"
+  },
+  "keywords": [
+    "rts",
+    "space-strategy",
+    "html5-canvas",
+    "websocket-game",
+    "multiplayer-game",
+    "nodejs",
+    "zero-dependency"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

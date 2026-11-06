@@ -1,0 +1,23 @@
+# 运行期数据（不入库）
+data/portal-db.json
+data/*.tmp*
+data/portal-db.json.tmp*
+data/*.log
+managed-nodes/
+game-node.config.json
+
+# 构建与打包产物
+*.zip
+node_modules/
+npm-debug.log*
+
+# 本地环境与密钥
+.env
+.env.*
+*.pem
+*.key
+
+# 工具缓存
+.mnemon/
+.DS_Store
+Thumbs.db

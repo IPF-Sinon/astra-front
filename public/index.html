@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
+<meta name="theme-color" content="#030812">
+<meta name="description" content="星海边境 ORBITAL FRONTIER — 多人实时星域争夺：飞船驻守星球、舰队远征、结盟与背叛。">
+<title>星海边境 · ORBITAL FRONTIER</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050a14'/%3E%3Ccircle cx='32' cy='32' r='16' fill='none' stroke='%236ef7ff' stroke-width='2'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%236ef7ff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/style.css">
+<script src="/game.js" defer></script>
+</head>
+<body>
+<div id="app">
+  <canvas id="stage" aria-label="星域地图"></canvas>
+
+  <div id="hud" hidden>
+    <div class="map-wrap" aria-hidden="true">
+      <div class="map-bracket"><span></span><span></span><span></span><span></span></div>
+      <div class="map-coords" id="mapCoords">滚轮 / 双指缩放 · 拖拽平移 · 双击空白回中</div>
+    </div>
+
+    <div class="top-hud">
+      <div class="minimap-panel panel" id="minimapWrap">
+        <div class="minimap-head"><span>全域星图</span><b id="minimapZoom">100%</b></div>
+        <canvas id="minimap" width="420" height="300" aria-label="全局小地图，点击可跳转"></canvas>
+        <div class="zoom-ctl">
+          <button type="button" id="zoomOut" aria-label="缩小">−</button>
+          <button type="button" id="zoomIn" aria-label="放大">+</button>
+          <button type="button" id="zoomFit" aria-label="回到默认视野">◎</button>
+        </div>
+        <div class="minimap-foot"><span><i class="lg-mine"></i>我方</span><span><i class="lg-enemy"></i>敌方</span><span><i class="lg-neutral"></i>中立</span></div>
+      </div>
+      <div class="status-panel panel">
+        <div class="self-panel-inner">
+          <div class="self-badge" id="selfBadge">CMD</div>
+          <div class="self-name"><strong id="selfName">指挥员</strong><span id="selfTag">COMMANDER</span></div>
+        </div>
+        <div class="self-stats">
+          <div><span>星球</span><b id="statPlanets">0</b></div>
+          <div><span>飞船</span><b id="statShips">0</b></div>
+          <div><span>舰队</span><b id="statFleets">0</b></div>
+          <div class="energy-meter"><span class="micro-label">资源 <b id="energyText" style="color:var(--aqua);font-family:var(--mono);font-size:9px">40</b></span><i id="energyBar"></i></div>
+        </div>
+        <button class="icon-btn menu-toggle" id="menuBtn" type="button" title="战术菜单" aria-label="打开菜单">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg>
+          <span class="badge" id="chatBadge" hidden>0</span>
+        </button>
+        <div class="hud-menu" id="hudMenu" hidden>
+          <button type="button" data-menu="factions"><span>阵营与外交</span><kbd>Tab</kbd></button>
+          <button type="button" data-menu="home"><span>镜头回主星</span><kbd>F</kbd></button>
+          <button type="button" data-menu="status"><span>星域态势</span><kbd></kbd></button>
+          <button type="button" data-menu="help"><span>作战手册</span><kbd>H</kbd></button>
+          <button type="button" data-menu="exportSave" id="menuExportSave" hidden><span>导出本地存档</span><kbd></kbd></button>
+          <button type="button" data-menu="leave"><span>退出星域</span><kbd></kbd></button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="faction-panel panel" id="factionPanel" hidden>
+      <button class="sheet-close" id="factionSheetClose" type="button" aria-label="关闭阵营面板" style="display:grid">×</button>
+      <div class="tab-row" role="tablist" hidden>
+        <button id="tabPlanets" type="button">我的星球</button>
+        <button class="on" id="tabFactions" type="button">阵营 / 外交</button>
+      </div>
+      <div id="planetsView" hidden>
+        <div class="panel-title"><strong>星域版图</strong><span id="myWorldsCount">0 座</span></div>
+        <div class="planet-list" id="planetList"></div>
+      </div>
+      <div id="factionsView">
+        <div class="panel-title"><strong>阵营情报</strong><span id="factionCount">8 席位</span></div>
+        <div class="faction-list" id="factionList"></div>
+      </div>
+    </aside>
+
+    <aside class="order-panel panel" id="orderPanel" hidden>
+      <div class="op-head">
+        <div><span class="micro-label" id="opKicker">FLEET</span><h2 id="opTitle">—</h2></div>
+        <button class="op-close" id="opClose" type="button" aria-label="关闭面板">×</button>
+        <button class="op-chevron" id="opChevron" type="button" aria-label="收起/展开面板">▾</button>
+      </div>
+      <div class="op-tags" id="opTags"></div>
+      <div class="op-grid" id="opStats"></div>
+      <div class="bar-grid" id="opBars"></div>
+      <div class="slider-block" id="sliderBlock" hidden>
+        <div class="slider-head"><span id="sliderLabel">派遣数量</span><b id="sliderValue">0 / 0</b></div>
+        <input type="range" id="countSlider" min="1" max="1" value="1">
+      </div>
+      <div class="action-grid" id="opActions"></div>
+      <div class="progress-line" id="opProgress" hidden><span id="opProgressText">读条</span><div class="bar"><i id="opProgressBar"></i></div></div>
+      <p class="op-note" id="opNote"></p>
+    </aside>
+
+    <!-- B2：星球右侧三枚六边形按钮（缩小为 2/3 即 27x27px，纯矢量 SVG 图标显示） -->
+    <div class="hex-menu" id="planetHexMenu" hidden>
+      <button class="hex-btn" id="hexInfo" type="button" title="星球信息" aria-label="星球信息">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="0.8" fill="currentColor"/></svg>
+      </button>
+      <button class="hex-btn" id="hexMid" type="button" title="转让 / 交易" aria-label="转让或交易">
+        <span id="hexMidLabel" class="hex-ico"></span>
+      </button>
+      <button class="hex-btn" id="hexLast" type="button" title="摧毁 / 外交" aria-label="摧毁或外交">
+        <span id="hexLastLabel" class="hex-ico"></span>
+      </button>
+    </div>
+
+    <!-- B2：星球紧凑信息浮窗 -->
+    <div class="planet-info panel" id="planetInfoPopup" hidden>
+      <div class="pi-head">
+        <span class="micro-label" id="piKicker">PLANET</span>
+        <button class="pi-close" id="piClose" type="button" aria-label="关闭信息">×</button>
+      </div>
+      <h3 id="piTitle">—</h3>
+      <div class="pi-rows" id="piRows"></div>
+      <div class="pi-fleets" id="piFleets"></div>
+    </div>
+
+    <!-- B1 / B3：底部常驻百分比派遣滑条 + 盟友颜色滑条 -->
+    <div class="dispatch-dock" id="dispatchDock">
+      <div class="ally-bars" id="allyBars" hidden></div>
+      <div class="dispatch-bar panel" id="dispatchBar">
+        <div class="dispatch-head">
+          <span>派遣舰队</span>
+          <div class="dispatch-num-wrap">
+            <input type="number" id="dispatchCountInput" class="dispatch-count-input" min="1" step="1" value="1" title="直接输入派遣飞船数量">
+            <span class="dispatch-unit">艘</span>
+            <b id="dispatchPctLabel">100%</b>
+          </div>
+        </div>
+        <div class="dispatch-track" id="dispatchTrack">
+          <div class="dispatch-fill" id="dispatchFill"></div>
+          <div class="dispatch-thumb" id="dispatchThumb"></div>
+          <div class="dispatch-ticks" id="dispatchTicks">
+            <span data-v="0">0</span><span data-v="25">25</span><span data-v="50">50</span><span data-v="75">75</span><span data-v="100">100</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B4：联合出兵集结进度（发起方） -->
+    <div class="joint-status panel" id="jointStatus" hidden>
+      <span class="micro-label">JOINT LAUNCH · 联合出兵集结</span>
+      <div id="jointStatusBody"></div>
+    </div>
+
+    <!-- B4：联合出兵请求卡片（被请求盟友，可关闭） -->
+    <div class="joint-req-list" id="jointReqList" hidden></div>
+
+    <!-- C2：右侧可拖动“邮件”悬浮球 -->
+    <div class="mail-orb" id="mailOrb" title="待办联络">
+      <svg class="mail-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="1"/><polyline points="3,7 12,13 21,7"/></svg>
+      <span class="mail-badge" id="mailBadge" hidden>0</span>
+    </div>
+    <div class="mail-panel panel" id="mailPanel" hidden>
+      <div class="mail-head"><span class="micro-label">MAIL · 待办</span><button class="pi-close" id="mailClose" type="button" aria-label="关闭邮件">×</button></div>
+      <div class="mail-list" id="mailList"></div>
+    </div>
+
+    <!-- C3：交易 / 转让对话框 -->
+    <div class="confirm-overlay" id="dealModal" hidden>
+      <div class="confirm-card panel deal-card">
+        <span class="micro-label" id="dealKicker">DEAL</span>
+        <h2 id="dealTitle">交易</h2>
+        <div class="deal-body" id="dealBody"></div>
+        <div class="confirm-actions">
+          <button class="btn" id="dealCancel" type="button">取消</button>
+          <button class="btn primary" id="dealSubmit" type="button">提交</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- C4：七态外交面板 -->
+    <div class="confirm-overlay" id="diploModal" hidden>
+      <div class="confirm-card panel diplo-card">
+        <span class="micro-label" id="diploKicker">DIPLOMACY</span>
+        <h2 id="diploTitle">外交</h2>
+        <div class="diplo-state" id="diploState"></div>
+        <div class="diplo-actions" id="diploActions"></div>
+        <p class="deal-hint" id="diploHint"></p>
+        <div class="confirm-actions"><button class="btn" id="diploClose" type="button">关闭</button></div>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <div class="legend panel">
+        <b class="legend-brand">ORBITAL FRONTIER</b>
+        <span><i class="lg-dot"></i>飞船</span>
+        <span><i class="lg-ring"></i>中立星球</span>
+        <span><i class="lg-fleet"></i>舰队</span>
+      </div>
+      <div class="hint-bar panel"><span class="step" id="hintStep">01</span><p id="hintText">点选你的星球，再点目标星球两次（或双击）下令出征</p></div>
+      <div class="mode-tag panel" id="modeTag">待命</div>
+    </div>
+
+    <div class="event-feed" id="eventFeed" aria-live="polite"></div>
+    <div class="toast" id="toast"></div>
+    <div class="net-banner" id="netBanner" hidden>链路中断 · 正在重新同步星域…</div>
+    <div class="elim-overlay" id="elimOverlay" hidden>
+      <div class="elim-card panel">
+        <span class="micro-label">ELIMINATED · 舰队全灭</span>
+        <h2>你已被淘汰</h2>
+        <p>所有星球与飞船都已易手。整备结束后将以新玩家身份重返星域。</p>
+        <div class="elim-count"><b id="elimSeconds">30</b><span>秒后重生</span></div>
+      </div>
+    </div>
+    <div class="dialog panel" id="statusDialog" hidden>
+      <button class="op-close" id="statusClose" type="button" style="position:absolute;right:12px;top:10px" aria-label="关闭">×</button>
+      <span class="micro-label">SECTOR STATUS</span>
+      <h2>星域状态</h2>
+      <div id="statusBody" class="status-body"></div>
+    </div>
+
+    <!-- Stage 3 · Task E：最后 3 分钟红色倒计时条 -->
+    <div class="countdown-bar" id="countdownBar" hidden><span class="cd-dot"></span><span id="countdownText">剩余 3:00</span></div>
+    <div class="fps-badge" id="fpsBadge" hidden>-- FPS · --ms</div>
+    <!-- Stage 3 · Task E：右上角实时综合权重积分榜 -->
+    <div class="score-board panel" id="scoreBoard" hidden>
+      <div class="sb-head"><span class="micro-label">SCOREBOARD · 积分榜</span><button class="pi-close" id="scoreBoardToggle" type="button" aria-label="折叠积分榜">−</button></div>
+      <div class="sb-body" id="scoreBoardBody"></div>
+    </div>
+    <!-- Stage 3 · Task E：观战标记 -->
+    <div class="spectate-badge" id="spectateBadge" hidden>观战中 · SPECTATOR</div>
+
+    <!-- Stage 3 · Task E：淘汰模式候场面板 -->
+    <div class="lobby-panel panel" id="lobbyPanel" hidden>
+      <span class="micro-label">ELIMINATION LOBBY · 淘汰房候场</span>
+      <h2 id="lobbyTitle">候场</h2>
+      <div class="lobby-host" id="lobbyHost"></div>
+      <div class="lobby-players" id="lobbyPlayers"></div>
+      <div class="lobby-controls" id="lobbyControls" hidden>
+        <button class="btn" id="lobbyAddAI" type="button">添加 AI</button>
+        <button class="btn" id="lobbyRemoveAI" type="button">移除 AI</button>
+        <button class="btn primary" id="lobbyStart" type="button">开始对局</button>
+      </div>
+      <p class="lobby-note" id="lobbyNote"></p>
+    </div>
+
+    <!-- Stage 3 · Task E：房间结算战报 -->
+    <div class="confirm-overlay" id="roomSettledModal" hidden>
+      <div class="confirm-card panel rs-card">
+        <span class="micro-label" id="rsKicker">ROOM SETTLED · 战报</span>
+        <h2 id="rsTitle">战报</h2>
+        <div class="rs-reason" id="rsReason"></div>
+        <table class="rs-table"><thead><tr><th>#</th><th>指挥官</th><th>得分</th><th>星球</th><th>飞船</th></tr></thead><tbody id="rsBody"></tbody></table>
+        <div class="confirm-actions"><button class="btn" id="rsClose" type="button">关闭</button><button class="btn primary" id="rsLobby" type="button">返回大厅</button></div>
+      </div>
+    </div>
+
+    <div class="chat-panel panel" id="chatPanel" hidden>
+      <div class="chat-head" id="chatHead">
+        <div class="chat-channels" id="chatChannels">
+          <button type="button" class="chat-ch" data-ch="global" id="chatChGlobal">全局</button>
+          <button type="button" class="chat-ch" data-ch="ally" id="chatChAlly">联盟</button>
+        </div>
+        <span class="chat-cool" id="chatCool"></span>
+        <button type="button" class="chat-collapse" id="chatCollapse" aria-label="折叠聊天栏">▾</button>
+      </div>
+      <div class="chat-log" id="chatLog"></div>
+      <form class="chat-form" id="chatForm">
+        <input id="chatInput" maxlength="90" placeholder="向全局频道发送讯息…" autocomplete="off">
+        <button type="submit" id="chatSend">发送</button>
+      </form>
+    </div>
+
+  </div>
+
+  <section class="start-screen" id="startScreen">
+    <div class="portal-wrap">
+      <!-- 视图①：首次启动创建管理员 -->
+      <div class="portal-view" id="bootstrapView" hidden>
+        <div class="portal-card panel">
+          <div class="eyebrow"><span class="eyebrow-line"></span>SYSTEM INITIALIZATION · 创建首个管理员账号</div>
+          <p class="portal-desc">系统尚未创建任何账户，请查看服务端控制台日志输出的 BOOTSTRAP_TOKEN 完成首次管理员绑定。</p>
+          <form class="portal-form" id="bootstrapForm" autocomplete="off">
+            <label>BOOTSTRAP TOKEN<input id="bootToken" type="text" placeholder="控制台输出的 32 位令牌"></label>
+            <label>管理员呼号<input id="bootUser" type="text" maxlength="12" placeholder="2~12 字符"></label>
+            <label>管理员密码<input id="bootPass" type="password" placeholder="设置密码"></label>
+            <button class="primary-button" id="bootSubmit" type="submit"><span>完成初始化</span></button>
+            <p class="portal-msg" id="bootMsg"></p>
+          </form>
+        </div>
+      </div>
+
+      <!-- 视图②：登录 / 注册 / 恢复码重置 -->
+      <div class="portal-view" id="authView" hidden>
+        <div class="portal-card panel">
+          <div class="eyebrow"><span class="eyebrow-line"></span>COMMANDER AUTH · 指挥官认证</div>
+          <div class="auth-tabs">
+            <button type="button" class="auth-tab on" data-auth="login" id="tabLogin">登录</button>
+            <button type="button" class="auth-tab" data-auth="register" id="tabRegister">注册</button>
+            <button type="button" class="auth-tab" data-auth="reset" id="tabReset">恢复码重置</button>
+          </div>
+          <form class="portal-form auth-pane" id="loginForm" autocomplete="off">
+            <label>用户名<input id="loginUser" type="text" autocomplete="username"></label>
+            <label>密码<input id="loginPass" type="password" autocomplete="current-password"></label>
+            <button class="primary-button" type="submit"><span>登录</span></button>
+          </form>
+          <form class="portal-form auth-pane" id="regForm" autocomplete="off" hidden>
+            <label>用户名<input id="regUser" type="text" maxlength="12" autocomplete="username"></label>
+            <label>密码<input id="regPass" type="password" autocomplete="new-password"></label>
+            <button class="primary-button" type="submit"><span>注册</span></button>
+          </form>
+          <form class="portal-form auth-pane" id="resetForm" autocomplete="off" hidden>
+            <label>用户名<input id="resetUser" type="text"></label>
+            <label>12 位恢复码<input id="resetCode" type="text" placeholder="XXXX-XXXX-XXXX" maxlength="14"></label>
+            <label>新密码<input id="resetPass" type="password"></label>
+            <button class="primary-button" type="submit"><span>重置密码</span></button>
+          </form>
+          <p class="portal-msg" id="authMsg"></p>
+        </div>
+      </div>
+
+      <!-- 视图③：首页（auth / standby / menu 三态，巨型主星居中与镜头左移由 game.js 推摇） -->
+      <div class="portal-view" id="homeView" hidden>
+        <!-- 居中待机态：半透明呼吸条 -->
+        <div class="standby-prompt" id="standbyPrompt"><span>点击空白处进入游戏</span></div>
+
+        <!-- 视角左移后渐显的主菜单（右侧黄金分割区，竖屏时居中） -->
+        <div class="home-main" id="homeMainMenu" hidden>
+          <h1 class="home-title">星海边境<span>ORBITAL FRONTIER</span></h1>
+          <div class="home-menu">
+            <button type="button" class="home-btn primary" id="homeExpedition"><em>前往远征</em><b>›</b></button>
+            <button type="button" class="home-btn" id="homeLobby"><em>房间大厅</em><b>›</b></button>
+            <button type="button" class="home-btn" id="homeSettings"><em>游戏设置</em><b>›</b></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 视图③附：本地远征沙盒（单人关卡 / 本地存档解析，全部在浏览器本地运行） -->
+      <div class="confirm-overlay" id="expeditionModal" hidden>
+        <div class="confirm-card panel expedition-card">
+          <span class="micro-label">LOCAL EXPEDITION · 本地远征沙盒</span>
+          <h2>本地存档与关卡解析</h2>
+          <p class="portal-desc">一切数据均在浏览器本地解析运行，支持导入 .json 关卡或本地存档文件，也可直接生成单人演习星域并在局内随时导出本地存档。</p>
+          <div class="expedition-actions">
+            <label class="btn primary wide expedition-file-label">
+              上传本地存档 / 关卡文件 (.json)
+              <input type="file" id="expeditionFileInput" accept=".json,application/json" hidden>
+            </label>
+            <button class="btn wide" id="expeditionStartDefault" type="button">直接进入本地标准演习关卡</button>
+          </div>
+          <p class="portal-msg" id="expeditionMsg"></p>
+          <div class="confirm-actions"><button class="btn" id="expeditionClose" type="button">返回</button></div>
+        </div>
+      </div>
+
+      <!-- 视图③：星域房间大厅（MC 式列表） -->
+      <div class="portal-view" id="lobbyHallView" hidden>
+        <div class="hall-top panel">
+          <button type="button" class="btn small hall-back" id="hallBackHome">返回首页</button>
+          <div class="hall-filters" id="hallFilters">
+            <button type="button" class="hall-filter on" data-filter="all" id="hallFilterAll">全部星域</button>
+            <button type="button" class="hall-filter" data-filter="normal" id="hallFilterNormal">普通模式</button>
+            <button type="button" class="hall-filter" data-filter="elim" id="hallFilterElim">淘汰死斗</button>
+            <button type="button" class="hall-filter" data-filter="endless" id="hallFilterEndless">无尽模式</button>
+          </div>
+          <div class="hall-meta"><span id="hallVersion">v?</span></div>
+          <div class="hall-actions">
+            <button type="button" class="btn" id="hallRefresh">刷新大厅</button>
+          </div>
+        </div>
+
+        <div class="mc-room-list" id="mcRoomList"></div>
+
+        <div class="mc-hall-footer panel">
+          <button type="button" class="btn primary" id="mcJoinSelected">加入选中星域</button>
+          <button type="button" class="btn" id="mcCreateElim">+ 创建淘汰房</button>
+          <button type="button" class="btn" id="mcSpectate" hidden>上帝视角观战</button>
+          <button type="button" class="btn" id="mcRefresh">刷新列表</button>
+        </div>
+        <form class="create-elim mc-create-bar panel" id="createElimForm" autocomplete="off" hidden>
+          <input id="elimName" type="text" maxlength="16" placeholder="房间名称">
+          <select id="elimMax"><option value="2">2 人</option><option value="3">3 人</option><option value="4">4 人</option><option value="5">5 人</option><option value="6">6 人</option><option value="7">7 人</option><option value="8">8 人</option></select>
+          <button class="btn primary" type="submit">创建并进入</button>
+        </form>
+        <p class="portal-msg" id="hallMsg"></p>
+      </div>
+    </div>
+
+    <!-- 恢复码模态框 -->
+    <div class="confirm-overlay" id="recoveryModal" hidden>
+      <div class="confirm-card panel rec-card">
+        <span class="micro-label">RECOVERY CODE · 恢复码</span>
+        <h2>请妥善保存恢复码</h2>
+        <p class="rec-desc">这是你唯一的账号找回凭证，仅此一次明文显示；请复制并离线保存。</p>
+        <div class="rec-code" id="recoveryCode">—</div>
+        <div class="rec-temp" id="recoveryTemp" hidden></div>
+        <div class="confirm-actions"><button class="btn" id="recoveryCopy" type="button">复制恢复码</button><button class="btn primary" id="recoveryDone" type="button">我已保存</button></div>
+      </div>
+    </div>
+
+    <!-- Stage 5.5：角落按钮提升到 #startScreen 直接子级，未登录(auth)也能看到「公告」，
+         待机态(standby)显示公告+退出登录，进入主菜单(menu)/大厅(hall)后由 game.js 隐藏 -->
+    <button type="button" class="corner-icon-btn top-right" id="homeNoticeBtn" title="星域公告" aria-label="查看星域公告">公告</button>
+    <button type="button" class="corner-icon-btn bottom-right" id="homeSwitch" title="退出登录" aria-label="退出当前账号">退出登录</button>
+  </section>
+
+  <!-- Stage 5.2：全局共用弹窗提升到 #app 顶层（z-index:65） -->
+    <!-- MC 式分级设置：基础画质档位 / 渲染细节与特效开关 / 音频输出（唯一入口：首页 -> 游戏设置） -->
+    <div class="confirm-overlay" id="settingsModal" hidden>
+      <div class="confirm-card panel settings-card">
+        <span class="micro-label">VIDEO & AUDIO SETTINGS · 游戏设置</span>
+        <h2>画面与音频设置</h2>
+        <div class="settings-body">
+          <div class="set-group-title">基础画质档位（仅控制渲染分辨率采样率与纹理滤波）</div>
+          <div class="set-row"><span>分辨率画质</span>
+            <select id="setQuality">
+              <option value="high">高画质（2.0x 超采 DPR + 高清滤波）</option>
+              <option value="balanced" selected>均衡画质（1.5x 标准 DPR）</option>
+              <option value="smooth">流畅画质（1.0x 原生 DPR）</option>
+            </select>
+          </div>
+          <label class="set-row"><span>深空星云亮度</span><input type="range" id="setNebula" min="20" max="100" value="100"></label>
+
+          <div class="set-group-title">渲染细节与特效开关（可逐项独立配置）</div>
+          <div class="set-toggles-grid">
+            <label class="set-toggle"><input type="checkbox" id="setRotPlanet" checked><span>星球与云层自转</span></label>
+            <label class="set-toggle"><input type="checkbox" id="setNebulaFlow" checked><span>星云流转与星尘</span></label>
+            <label class="set-toggle"><input type="checkbox" id="setParticles" checked><span>交战与爆炸粒子</span></label>
+            <label class="set-toggle"><input type="checkbox" id="setEngineTrails" checked><span>舰队离子尾焰</span></label>
+            <label class="set-toggle"><input type="checkbox" id="setPlanetRings" checked><span>行星星环与光晕</span></label>
+            <label class="set-toggle"><input type="checkbox" id="setShowFps"><span>显示 FPS 与延迟</span></label>
+          </div>
+
+          <div class="set-group-title">音频输出</div>
+          <label class="set-row"><span>主音量</span><input type="range" id="setVolume" min="0" max="100" value="60"></label>
+          <label class="set-row"><input type="checkbox" id="setUiSfx" checked><span>启用全部音频与交互音效</span></label>
+        </div>
+        <div class="confirm-actions"><button class="btn primary" id="settingsClose" type="button">完成并保存</button></div>
+      </div>
+    </div>
+
+    <div class="help-panel panel" id="helpPanel" hidden>
+      <button class="op-close" id="helpClose" type="button" style="position:absolute;right:12px;top:10px" aria-label="关闭">×</button>
+      <span class="micro-label">COMMAND MANUAL</span>
+      <h2>指挥手册</h2>
+      <div class="help-list">
+        <div><b>选择</b><span>点击你的星球或舰队选中；同一目标连点两次即确认命令。</span></div>
+        <div><b>远征</b><span>选中己方星球后点击其它星球：按滑杆比例分出舰队飞过去。</span></div>
+        <div><b>拆分 / 合并</b><span>滑杆调派出比例；「只留驻军」把余量全部派走；「合并到此」把选中星球驻军并入目标。</span></div>
+        <div><b>补充飞船</b><span>星球自动补充飞船，每艘消耗 1 资源，直至载船上限（按星球大小）。可随时停止补充。</span></div>
+        <div><b>资源耗竭</b><span>资源到 0 时星球中心显示「耗竭」，驻军改为消耗能量，能量不足会产生流失。</span></div>
+        <div><b>摧毁</b><span>驻军 ≥ 15 艘可摧毁耗竭星球：读条 8 秒后获得少量资源；空置的耗竭星球会自行消亡。</span></div>
+        <div><b>空间资源</b><span>地图上的菱形资源点：选中己方星球后点击它，派舰队采集。</span></div>
+        <div><b>结盟</b><span>消耗 40 能量派出社交舰队前往对方主星，抵达即结盟，双方统一颜色；可在阵营页解除。</span></div>
+        <div><b>相机</b><span>拖拽平移、滚轮 / 双指缩放、双击空白回中。</span></div>
+      </div>
+    </div>
+    <!-- B2：自绘 DOM 确认框（替代 window.confirm 的摧毁确认） -->
+    <div class="confirm-overlay" id="confirmModal" hidden>
+      <div class="confirm-card panel">
+        <span class="micro-label" id="confirmKicker">CONFIRM</span>
+        <h2 id="confirmTitle">确认操作</h2>
+        <p class="confirm-body" id="confirmBody"></p>
+        <div class="confirm-actions">
+          <button class="btn" id="confirmCancel" type="button">取消</button>
+          <button class="btn danger" id="confirmOk" type="button">确认</button>
+        </div>
+      </div>
+    </div>
+
+</div>
+
+<!-- Stage 5.5：顶层穿透粒子画布（任何弹窗/按钮上点击都能看到星芒迸发） -->
+<canvas id="fxCanvas" aria-hidden="true"></canvas>
+</body>
+</html>

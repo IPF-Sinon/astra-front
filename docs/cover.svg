@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<defs>
+<radialGradient id="bg" cx="58%" cy="48%" r="70%"><stop offset="0" stop-color="#0a2233"/><stop offset=".55" stop-color="#05101b"/><stop offset="1" stop-color="#02050b"/></radialGradient>
+<radialGradient id="glow"><stop offset="0" stop-color="#6ef7ff" stop-opacity=".5"/><stop offset="1" stop-color="#6ef7ff" stop-opacity="0"/></radialGradient>
+<linearGradient id="hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#18313f" stop-opacity=".9"/><stop offset="1" stop-color="#061018"/></linearGradient>
+<linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d8ffff"/><stop offset="1" stop-color="#1d6f88"/></linearGradient>
+<linearGradient id="txt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#c9fbff"/><stop offset="1" stop-color="#3aa6bd"/></linearGradient>
+</defs>
+<rect width="1200" height="630" fill="url(#bg)"/>
+<g fill="#bfe9f5"><circle cx="90" cy="80" r="1.4" opacity=".8"/><circle cx="220" cy="160" r="1" opacity=".5"/><circle cx="410" cy="60" r="1.2" opacity=".7"/><circle cx="700" cy="120" r="1" opacity=".6"/><circle cx="980" cy="70" r="1.5" opacity=".8"/><circle cx="1120" cy="200" r="1" opacity=".5"/><circle cx="150" cy="430" r="1.2" opacity=".6"/><circle cx="330" cy="520" r="1" opacity=".5"/><circle cx="620" cy="560" r="1.3" opacity=".7"/><circle cx="860" cy="470" r="1" opacity=".5"/><circle cx="1070" cy="540" r="1.2" opacity=".6"/><circle cx="520" cy="230" r="1" opacity=".4"/></g>
+<circle cx="880" cy="300" r="360" fill="url(#glow)" opacity=".35"/>
+<g transform="translate(880 300) scale(1.25)">
+<circle r="210" fill="none" stroke="#6ef7ff" stroke-opacity=".14" stroke-dasharray="3 10"/>
+<circle r="160" fill="none" stroke="#6ef7ff" stroke-opacity=".08"/>
+<g transform="rotate(-18)">
+<path d="M0 -150 L58 -30 L112 92 L42 62 L28 150 L0 186 L-28 150 L-42 62 L-112 92 L-58 -30 Z" fill="url(#hull)" stroke="url(#edge)" stroke-width="2"/>
+<path d="M0 -112 L24 -20 L0 30 L-24 -20 Z" fill="#0e2d3d" stroke="#69f4ff" stroke-width="1.4"/>
+<path d="M0 -80 L14 -16 L0 12 L-14 -16 Z" fill="#79fbff" opacity=".7"/>
+<path d="M0 160 L16 230 L0 210 L-16 230 Z" fill="#8bfff2" opacity=".85"/>
+</g></g>
+<text x="90" y="250" font-family="Georgia, Songti SC, serif" font-size="150" font-weight="900" letter-spacing="-8" fill="url(#txt)">星海</text>
+<text x="90" y="400" font-family="Georgia, Songti SC, serif" font-size="150" font-weight="900" letter-spacing="-8" fill="url(#txt)">边境</text>
+<text x="96" y="452" font-family="monospace" font-size="20" letter-spacing="12" fill="#5f8f9d">ORBITAL FRONTIER</text>
+<rect x="90" y="480" width="520" height="1" fill="#6ef7ff" opacity=".25"/>
+<text x="90" y="520" font-family="PingFang SC, Noto Sans SC, sans-serif" font-size="19" fill="#8fb6c0">多人实时太空竞技 · 打开即战 · 触屏 / 键鼠</text>
+<g font-family="monospace" font-size="13" letter-spacing="2" fill="#4f7481"><text x="90" y="566">SECTOR KHEPRI-9</text><text x="290" y="566">16 PILOTS</text><text x="450" y="566">REALTIME MMO</text></g>
+<text x="1110" y="586" text-anchor="end" font-family="monospace" font-size="12" letter-spacing="3" fill="#3d6270">BUILD 1.0.7</text>
+</svg>
