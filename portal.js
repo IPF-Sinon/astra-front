@@ -1229,8 +1229,8 @@ async function app(req, res) {
     if (p === '/api/admin/node-manager/start' && method === 'POST') {
       const auth = requireAdmin(req); if (!auth.ok) return fail(res, auth.status, auth.error);
       const body = await readJson(req);
-      const nodeId = String(body.nodeId || '').trim(); if (!nodeId) return fail(res, 400, 'invalid_node_id');
-      const port = Number(body.port) || 8787;
+      // Stage 5.5 修复：门户只托管单实例本地节点，nodeId 可选（不再因缺省报 invalid_node_id）
+      const port = Number(body.port) || LOCAL_NODE_PORT;
       try { const r = await ensureLocalNode(port, body.downloadUrl || ''); return send(res, 200, Object.assign({ ok: true }, r)); }
       catch (e) { return fail(res, 500, 'start_failed', String(e && e.message || e)); }
     }
@@ -1241,8 +1241,8 @@ async function app(req, res) {
     }
     if (p === '/api/admin/node-manager/restart' && method === 'POST') {
       const auth = requireAdmin(req); if (!auth.ok) return fail(res, auth.status, auth.error);
-      const body = await readJson(req); const nodeId = String(body.nodeId || '').trim(); if (!nodeId) return fail(res, 400, 'invalid_node_id');
-      const port = Number(body.port) || 8787;
+      const body = await readJson(req);
+      const port = Number(body.port) || LOCAL_NODE_PORT;
       try { const r = await restartLocalNode(port, body.downloadUrl || ''); return send(res, 200, Object.assign({ ok: true, restarted: true }, r)); }
       catch (e) { return fail(res, 500, 'restart_failed', String(e && e.message || e)); }
     }

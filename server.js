@@ -2629,7 +2629,8 @@ class RoomManager {
 
   tick() {
     const joinable = Array.from(this.rooms.values()).filter((g) => g.mode === 'normal' && g.status === 'running' && !g.noJoin && !g.settled);
-    while (joinable.length < 3) { this.createRoom({ mode: 'normal' }); joinable.push(this.rooms.get('norm-' + this.seq.norm)); }
+    // Stage 5.5：只保底 1 个待命普通房（原为 3 个，导致大厅「一堆空房」）；玩家建房/快速匹配时再按需扩展
+    while (joinable.length < 1) { this.createRoom({ mode: 'normal' }); joinable.push(this.rooms.get('norm-' + this.seq.norm)); }
     for (const [id, g] of Array.from(this.rooms.entries())) {
       if (g.status === 'settled' || g.settled) {
         if (!g.settledAt) g.settledAt = Date.now();
@@ -2654,10 +2655,8 @@ class RoomManager {
 
 const roomManager = new RoomManager();
 const game = roomManager.defaultNormalRoom();
-// the pool must expose at least two joinable normal rooms immediately (not only after the first 2s tick)
-while (Array.from(roomManager.rooms.values()).filter((g) => g.mode === 'normal' && g.status === 'running' && !g.noJoin).length < 3) {
-  roomManager.createRoom({ mode: 'normal' });
-}
+// Stage 5.5：启动时只保留 1 个待命普通房（此前预建 3 个，导致未开局就「一堆房间」）。
+// 更多房间在玩家真正需要时由 defaultNormalRoom()/建房接口按需创建。
 // defensive: make sure optional collections exist even if a constructor edit was missed
 game.outposts = game.outposts || [];
 game.pendingPacts = game.pendingPacts || new Map();

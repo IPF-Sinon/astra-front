@@ -1194,7 +1194,10 @@
     nebula_deep_1: '/assets/nebula_deep_1.webp', nebula_deep_2: '/assets/nebula_deep_2.webp',
     planet_terran: '/assets/planet_terran.webp', planet_gas: '/assets/planet_gas.webp',
     planet_storm: '/assets/planet_storm.webp', planet_lava: '/assets/planet_lava.webp',
-    planet_clouds: '/assets/planet_clouds.webp'
+    planet_clouds: '/assets/planet_clouds.webp',
+    // Stage 5.5：4 艘战舰真 Alpha 精灵图（首页环轨舰队 / 局内出征舰队）
+    ship_flagship: '/assets/ship_flagship.webp', ship_cruiser: '/assets/ship_cruiser.webp',
+    ship_interceptor: '/assets/ship_interceptor.webp', ship_fighter: '/assets/ship_fighter.webp'
   };
   var assets = {}; var iceTex = null;
   function loadAssets() {
